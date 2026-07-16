@@ -2,8 +2,6 @@
 
 DOGE Forecast Lab is a reproducible next-day forecasting study for DOGE-USD. It predicts return quantiles, converts them into price levels, and compares the median model with a persistence baseline on a time-ordered holdout set.
 
-[Open the Streamlit app](https://doge-forecast-hzbcysrfyyxfrqzagu6vu7.streamlit.app/)
-
 ## Current result
 
 On the refreshed time-ordered holdout, the committed model has MAE `0.00457` versus `0.00462` for the persistence baseline. The improvement is small, so the dashboard reports both values instead of presenting the forecast as a trading edge. The p10-p90 interval covers 84.6% of holdout observations, with zero quantile crossings after the return-model redesign.
