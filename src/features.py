@@ -1,65 +1,80 @@
 import numpy as np
 import pandas as pd
 
+from src.data import validate_market_data
+
+FEATURE_COLUMNS = [
+    "ret_1",
+    "ret_7",
+    "ret_14",
+    "vol_7",
+    "vol_14",
+    "sma_ratio_7",
+    "sma_ratio_14",
+    "ema_ratio_7",
+    "ema_ratio_14",
+    "rsi_14",
+    "macd",
+    "macd_signal",
+    "volume_ratio_7",
+    "volume_ret_1",
+    "close_lag_return_1",
+    "close_lag_return_2",
+    "close_lag_return_3",
+    "close_lag_return_7",
+]
+
 
 def rsi(series: pd.Series, period: int = 14) -> pd.Series:
     delta = series.diff()
-    gain = delta.where(delta > 0, 0.0)
-    loss = (-delta).where(delta < 0, 0.0)
-
-    avg_gain = gain.rolling(period).mean()
-    avg_loss = loss.rolling(period).mean()
-
-    rs = avg_gain / (avg_loss.replace(0, np.nan))
-    return 100 - (100 / (1 + rs))
+    gain = delta.clip(lower=0).rolling(period).mean()
+    loss = (-delta.clip(upper=0)).rolling(period).mean()
+    relative = gain / loss.replace(0, np.nan)
+    result = 100 - 100 / (1 + relative)
+    return result.mask((loss == 0) & (gain > 0), 100).mask((loss == 0) & (gain == 0), 50)
 
 
-def make_features(df: pd.DataFrame, horizon: int = 1) -> pd.DataFrame:
-    """
-    horizon=1 -> predict next day's Close.
-    Creates safe features using only past/current values.
-    """
-    df = df.copy()
-    df["Date"] = pd.to_datetime(df["Date"])
-    df = df.sort_values("Date").reset_index(drop=True)
-
-    close = df["Close"]
-
-    # Returns
-    df["ret_1"] = close.pct_change(1)
-    df["ret_7"] = close.pct_change(7)
-    df["ret_14"] = close.pct_change(14)
-
-    # Volatility
-    df["vol_7"] = df["ret_1"].rolling(7).std()
-    df["vol_14"] = df["ret_1"].rolling(14).std()
-
-    # Moving averages
-    df["sma_7"] = close.rolling(7).mean()
-    df["sma_14"] = close.rolling(14).mean()
-    df["ema_7"] = close.ewm(span=7, adjust=False).mean()
-    df["ema_14"] = close.ewm(span=14, adjust=False).mean()
-
-    # RSI
-    df["rsi_14"] = rsi(close, 14)
-
-    # MACD + signal
+def build_feature_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    data = validate_market_data(frame)
+    close = data["Close"]
+    returns = close.pct_change()
+    data["ret_1"] = returns
+    data["ret_7"] = close.pct_change(7)
+    data["ret_14"] = close.pct_change(14)
+    data["vol_7"] = returns.rolling(7).std()
+    data["vol_14"] = returns.rolling(14).std()
+    data["sma_ratio_7"] = close / close.rolling(7).mean() - 1
+    data["sma_ratio_14"] = close / close.rolling(14).mean() - 1
+    data["ema_ratio_7"] = close / close.ewm(span=7, adjust=False).mean() - 1
+    data["ema_ratio_14"] = close / close.ewm(span=14, adjust=False).mean() - 1
+    data["rsi_14"] = rsi(close)
     ema12 = close.ewm(span=12, adjust=False).mean()
     ema26 = close.ewm(span=26, adjust=False).mean()
-    df["macd"] = ema12 - ema26
-    df["macd_signal"] = df["macd"].ewm(span=9, adjust=False).mean()
+    data["macd"] = ema12 - ema26
+    data["macd_signal"] = data["macd"].ewm(span=9, adjust=False).mean()
+    data["volume_ratio_7"] = data["Volume"] / data["Volume"].rolling(7).mean() - 1
+    data["volume_ret_1"] = data["Volume"].pct_change()
+    for lag in (1, 2, 3, 7):
+        data[f"close_lag_return_{lag}"] = returns.shift(lag)
+    return data.dropna(subset=FEATURE_COLUMNS).reset_index(drop=True)
 
-    # Volume features
-    df["vol_sma_7"] = df["Volume"].rolling(7).mean()
-    df["vol_ret_1"] = df["Volume"].pct_change(1)
 
-    # Lags
-    for k in [1, 2, 3, 5, 7, 14]:
-        df[f"close_lag_{k}"] = close.shift(k)
-        df[f"ret_lag_{k}"] = df["ret_1"].shift(k)
+def build_training_frame(frame: pd.DataFrame, horizon: int = 1) -> pd.DataFrame:
+    if horizon != 1:
+        raise ValueError("Only a one-day horizon is supported.")
+    raw = validate_market_data(frame)
+    target = raw[["Date", "Close"]].copy()
+    target["target_return_1"] = target["Close"].shift(-1) / target["Close"] - 1
+    features = build_feature_frame(raw)
+    return (
+        features.merge(target[["Date", "target_return_1"]], on="Date")
+        .dropna()
+        .reset_index(drop=True)
+    )
 
-    # Target: next close
-    df["target_next_close"] = close.shift(-horizon)
 
-    df = df.dropna().reset_index(drop=True)
-    return df
+def latest_inference_row(frame: pd.DataFrame) -> pd.DataFrame:
+    features = build_feature_frame(frame)
+    if features.empty:
+        raise ValueError("At least 30 rows are required.")
+    return features.tail(1).copy()

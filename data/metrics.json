@@ -1,0 +1,10 @@
+{
+  "model_mae": 0.004572652834568742,
+  "baseline_mae": 0.004623562241224547,
+  "model_rmse": 0.007233673846242652,
+  "baseline_rmse": 0.007268018698953655,
+  "directional_accuracy": 0.5619834710743802,
+  "interval_coverage": 0.8457300275482094,
+  "quantile_crossings": 0,
+  "winner": "model"
+}

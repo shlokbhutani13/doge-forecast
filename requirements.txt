@@ -1,7 +1,7 @@
-streamlit
-pandas
-numpy
-scikit-learn
-joblib
-plotly
-yfinance
+streamlit>=1.54,<2
+pandas>=2.3,<3
+numpy>=2.2,<3
+scikit-learn>=1.7,<2
+joblib>=1.5,<2
+plotly>=6.0,<7
+yfinance>=0.2.65,<1
