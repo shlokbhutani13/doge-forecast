@@ -1,0 +1,101 @@
+{
+  "0bps": {
+    "fee_bps": 0.0,
+    "days": 363,
+    "start": "2025-07-18",
+    "end": "2026-07-15",
+    "forecast_strategy": {
+      "total_return": -0.0308,
+      "annual_return": -0.031,
+      "annual_volatility": 0.5685,
+      "sharpe": 0.2331,
+      "max_drawdown": -0.3398,
+      "time_in_market": 0.4573,
+      "trades": 167,
+      "win_rate_when_holding": 0.5
+    },
+    "buy_and_hold": {
+      "total_return": -0.6902,
+      "annual_return": -0.6922,
+      "annual_volatility": 0.7698,
+      "sharpe": -1.1411,
+      "max_drawdown": -0.7518,
+      "time_in_market": 1.0,
+      "trades": 1,
+      "win_rate_when_holding": 0.438
+    },
+    "random_same_exposure": {
+      "simulations": 2000,
+      "median_total_return": -0.416,
+      "p5_total_return": -0.6824,
+      "p95_total_return": 0.1291,
+      "share_of_random_runs_beaten": 0.884
+    }
+  },
+  "10bps": {
+    "fee_bps": 10.0,
+    "days": 363,
+    "start": "2025-07-18",
+    "end": "2026-07-15",
+    "forecast_strategy": {
+      "total_return": -0.0208,
+      "annual_return": -0.0209,
+      "annual_volatility": 0.4801,
+      "sharpe": 0.2023,
+      "max_drawdown": -0.2397,
+      "time_in_market": 0.2534,
+      "trades": 111,
+      "win_rate_when_holding": 0.5217
+    },
+    "buy_and_hold": {
+      "total_return": -0.6905,
+      "annual_return": -0.6925,
+      "annual_volatility": 0.7698,
+      "sharpe": -1.1425,
+      "max_drawdown": -0.7518,
+      "time_in_market": 1.0,
+      "trades": 1,
+      "win_rate_when_holding": 0.438
+    },
+    "random_same_exposure": {
+      "simulations": 2000,
+      "median_total_return": -0.3487,
+      "p5_total_return": -0.6303,
+      "p95_total_return": 0.1397,
+      "share_of_random_runs_beaten": 0.881
+    }
+  },
+  "25bps": {
+    "fee_bps": 25.0,
+    "days": 363,
+    "start": "2025-07-18",
+    "end": "2026-07-15",
+    "forecast_strategy": {
+      "total_return": -0.0888,
+      "annual_return": -0.0892,
+      "annual_volatility": 0.4096,
+      "sharpe": -0.0162,
+      "max_drawdown": -0.2626,
+      "time_in_market": 0.1212,
+      "trades": 60,
+      "win_rate_when_holding": 0.5
+    },
+    "buy_and_hold": {
+      "total_return": -0.6909,
+      "annual_return": -0.6929,
+      "annual_volatility": 0.7697,
+      "sharpe": -1.1445,
+      "max_drawdown": -0.7518,
+      "time_in_market": 1.0,
+      "trades": 1,
+      "win_rate_when_holding": 0.438
+    },
+    "random_same_exposure": {
+      "simulations": 2000,
+      "median_total_return": -0.2892,
+      "p5_total_return": -0.5371,
+      "p95_total_return": 0.0815,
+      "share_of_random_runs_beaten": 0.839
+    }
+  }
+}

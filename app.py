@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from src.artifacts import make_forecast
+from src.strategy import equity_curves, run_backtest
 
 st.set_page_config(page_title="DOGE Forecast Lab", page_icon="DF", layout="wide")
 st.markdown(
@@ -84,7 +85,48 @@ if metrics["winner"] == "baseline":
         unsafe_allow_html=True,
     )
 
-tab_backtest, tab_history, tab_method = st.tabs(["Backtest", "Price history", "Method"])
+tab_trading, tab_backtest, tab_history, tab_method = st.tabs(
+    ["Would it make money?", "Forecast vs actual", "Price history", "Method"]
+)
+with tab_trading:
+    st.write(
+        "Rule: hold DOGE tomorrow only when the median forecast predicts a gain bigger than "
+        "the trading fee. Otherwise stay in cash. Same test days as above."
+    )
+    fee_bps = st.select_slider(
+        "Trading fee per trade (basis points, 10 = 0.1%)",
+        options=[0, 5, 10, 25, 50],
+        value=10,
+        key="fee_bps",
+    )
+    trading = run_backtest(backtest, float(fee_bps))
+    strat, hold = trading["forecast_strategy"], trading["buy_and_hold"]
+    rand = trading["random_same_exposure"]
+    a, b, c, d = st.columns(4)
+    a.metric("Strategy return", f"{strat['total_return']:.1%}")
+    b.metric("Buy and hold", f"{hold['total_return']:.1%}")
+    c.metric("Strategy Sharpe", f"{strat['sharpe']:.2f}", f"buy and hold {hold['sharpe']:.2f}")
+    d.metric(
+        "Worst drawdown", f"{strat['max_drawdown']:.1%}", f"buy and hold {hold['max_drawdown']:.1%}"
+    )
+    curves = equity_curves(backtest, float(fee_bps))
+    fig = go.Figure()
+    for column in ("Forecast strategy", "Buy and hold"):
+        fig.add_trace(go.Scatter(x=curves["Date"], y=curves[column], name=column))
+    fig.update_layout(
+        height=420, margin={"l": 10, "r": 10, "t": 20, "b": 10}, yaxis_title="Value of $1"
+    )
+    st.plotly_chart(fig, width="stretch")
+    st.markdown(
+        f'<div class="note">The strategy held DOGE on {strat["time_in_market"]:.0%} of days. '
+        "Sitting in cash during a falling market looks smart even without skill, so it is "
+        f"compared with {rand['simulations']:,} random strategies that hold DOGE just as often. "
+        f"It beat {rand['share_of_random_runs_beaten']:.0%} of them (random median "
+        f"{rand['median_total_return']:.1%}). That hints at some signal, but it is not strong "
+        "proof of an edge.</div>",
+        unsafe_allow_html=True,
+    )
+
 with tab_backtest:
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=backtest["Date"], y=backtest["actual_next_close"], name="Actual"))

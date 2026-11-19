@@ -7,6 +7,7 @@ import joblib
 import pandas as pd
 from sklearn.ensemble import GradientBoostingRegressor
 
+from src.backtest import main as backtest_main
 from src.evaluation import calculate_metrics, order_quantiles, returns_to_prices
 from src.features import FEATURE_COLUMNS, build_training_frame
 
@@ -89,6 +90,7 @@ def main():
     result.backtest.to_csv("data/backtest_preds.csv", index=False)
     Path("data/metrics.json").write_text(json.dumps(result.metrics, indent=2) + "\n")
     print(json.dumps(result.metrics, indent=2))
+    backtest_main()
 
 
 if __name__ == "__main__":
