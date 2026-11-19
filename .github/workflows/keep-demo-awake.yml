@@ -1,0 +1,42 @@
+name: Keep demo awake
+
+# Streamlit Community Cloud puts apps to sleep after a while with no visitors.
+# This opens the demo a few times a day and clicks "wake up" if it is asleep.
+on:
+  schedule:
+    - cron: "23 */8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install playwright==1.65.2
+      - run: python -m playwright install --with-deps chromium
+      - name: Open the demo
+        env:
+          DEMO_URL: https://doge-forecast-hzbcysrfyyxfrqzagu6vu7.streamlit.app/
+        shell: python
+        run: |
+          import os
+          from playwright.sync_api import sync_playwright
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch()
+              page = browser.new_page()
+              page.goto(os.environ["DEMO_URL"], timeout=90_000)
+              wake = page.get_by_role("button", name="Yes, get this app back up!")
+              try:
+                  wake.click(timeout=15_000)
+                  print("The app was asleep. Woke it up.")
+              except Exception:
+                  print("The app was already awake.")
+              page.wait_for_timeout(60_000)
+              browser.close()

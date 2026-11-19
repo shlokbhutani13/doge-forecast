@@ -1,35 +1,48 @@
 # DOGE Forecast Lab
 
-DOGE Forecast Lab is a reproducible next-day forecasting study for DOGE-USD. It predicts return quantiles, converts them into price levels, and compares the median model with a persistence baseline on a time-ordered holdout set.
+[![CI](https://github.com/shlokbhutani13/doge-forecast/actions/workflows/ci.yml/badge.svg)](https://github.com/shlokbhutani13/doge-forecast/actions/workflows/ci.yml)
 
-## See it in action
+A small experiment in forecasting tomorrow's Dogecoin (DOGE-USD) price. Instead of one number, it predicts a range: a low, middle and high estimate. Then it checks whether that's any better than the simplest guess, "tomorrow's price = today's price."
 
-- [Open the live Streamlit demo](https://doge-forecast-hzbcysrfyyxfrqzagu6vu7.streamlit.app/)
-- [Project overview in my portfolio](https://shlokbhutani13.github.io/)
+**Try it:** [live dashboard](https://doge-forecast-hzbcysrfyyxfrqzagu6vu7.streamlit.app/) (it can take a few seconds to wake up)
 
-## Current result
+## Result
 
-On the refreshed time-ordered holdout, the committed model has MAE `0.00457` versus `0.00462` for the persistence baseline. The improvement is small, so the dashboard reports both values instead of presenting the forecast as a trading edge. The p10-p90 interval covers 84.6% of holdout observations, with zero quantile crossings after the return-model redesign.
+Tested on the last 363 days, kept in time order so the model never sees the future:
 
-The pipeline also reports RMSE, directional accuracy, interval coverage, and quantile crossings.
+| | Model | "Same as today" baseline |
+| --- | ---: | ---: |
+| Mean absolute error | 0.00457 | 0.00462 |
+| RMSE | 0.00723 | 0.00727 |
 
-## Run locally
+- The 10th–90th percentile range contained the real price 84.6% of the time.
+- The model called the direction (up or down) right 56% of the time.
+
+So the model beats the baseline, but only by a little. I show both numbers on the dashboard instead of pretending this is a trading edge.
+
+## How it works
+
+1. 1,827 days of DOGE-USD price history.
+2. 18 features built only from past data: returns, volatility, moving averages, RSI, MACD and volume.
+3. Gradient Boosting quantile regression predicts the 10th, 50th and 90th percentile of the next day's return, which is then turned into prices.
+4. A Streamlit dashboard shows the forecast range, recent trend and model vs. baseline.
+
+The live app reads saved data and a saved model. It doesn't download prices or retrain while you use it.
+
+## Run it locally
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 streamlit run app.py
 ```
 
-## Refresh and retrain
+Get fresh data and retrain:
 
 ```bash
 python -m src.fetch_data
 python -m src.train
 ```
-
-The deployed app reads committed data and model artifacts. It does not download market data or train a model at runtime.
 
 ## Tests
 
@@ -38,22 +51,11 @@ ruff check .
 python -m pytest -q
 ```
 
-Tests cover data validation, next-day target alignment, retention of the newest inference row, quantile ordering, price conversion, and baseline comparison.
+The tests check data validation, that the target really is the next day, that the forecast range stays in order (low ≤ middle ≤ high), and the baseline comparison.
 
-## Structure
+## Limits
 
-```text
-src/data.py          Data validation
-src/features.py      Past-only features and target alignment
-src/evaluation.py    Metrics and quantile ordering
-src/train.py         Time-ordered training and artifact output
-src/artifacts.py     Forecast generation
-app.py               Streamlit dashboard
-```
-
-## Limitations
-
-Crypto prices are noisy and nonstationary. A historical holdout result does not imply future performance. This project is educational and does not provide financial advice.
+Crypto prices are noisy, and past results don't predict future ones. This is a learning project, not financial advice.
 
 ## License
 
